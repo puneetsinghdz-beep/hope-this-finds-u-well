@@ -95,7 +95,7 @@ export function Quiz() {
           className="w-full rounded-2xl border border-input bg-background p-4 outline-none focus:ring-2 focus:ring-ring" />
       )}
 
-      <div className="sticky bottom-3 mt-8 flex justify-between gap-3">
+      <div className="sticky bottom-0 -mx-2 mt-8 flex justify-between gap-3 rounded-full bg-card/95 p-2 backdrop-blur">
         <button className="btn-ghost" disabled={step === 0} onClick={() => setStep(step - 1)}>← Back</button>
         <button className="btn-soft" onClick={() => setStep(step + 1)}>Next →</button>
       </div>
