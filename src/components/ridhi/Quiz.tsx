@@ -59,7 +59,7 @@ export function Quiz() {
     );
   }
 
-  const q = QUIZ[step];
+  const q = QUIZ[step]!;
   const a = answers[step] || {};
   const sel = a.choice !== undefined ? q.options?.[a.choice] : undefined;
 

@@ -18,13 +18,13 @@ export function Music() {
   const [showWhy, setShowWhy] = useState(false);
   const [suggest, setSuggest] = useState("");
 
-  const track = PLAYLIST[cur];
+  const track = PLAYLIST[cur]!;
   const available = !!track.file;
 
   useEffect(() => {
     if (shuffle) {
       const rest = PLAYLIST.map((_, i) => i).filter((i) => i !== cur);
-      for (let i = rest.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [rest[i], rest[j]] = [rest[j], rest[i]]; }
+      for (let i = rest.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [rest[i], rest[j]] = [rest[j]!, rest[i]!]; }
       setOrder([cur, ...rest]);
     } else setOrder(PLAYLIST.map((_, i) => i));
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -36,12 +36,12 @@ export function Music() {
     setCur(i); setHoteEnded(false); setShowWhy(false); setError(null); setTime(0); setDur(0);
     const a = audio.current; if (!a) return;
     a.pause(); setPlaying(false);
-    const t = PLAYLIST[i];
+    const t = PLAYLIST[i]!;
     if (!t.file) { a.removeAttribute("src"); a.load(); setError("This song hasn't been added yet."); return; }
     a.src = t.file;
     if (autoplay) a.play().then(() => setPlaying(true)).catch(() => setError("This song couldn't be loaded."));
   };
-  const step = (d: number) => { const p = order.indexOf(cur); const n = p + d; if (n < 0 || n >= order.length) return false; select(order[n]); return true; };
+  const step = (d: number) => { const p = order.indexOf(cur); const n = p + d; if (n < 0 || n >= order.length) return false; select(order[n]!); return true; };
 
   const toggle = () => {
     const a = audio.current; if (!a) return;
@@ -105,7 +105,7 @@ export function Music() {
       <div className="rounded-[2rem] bg-card p-4 shadow-soft">
         <ol className="max-h-[32rem] space-y-1 overflow-y-auto pr-1">
           {order.map((i, n) => {
-            const t = PLAYLIST[i]; const active = i === cur;
+            const t = PLAYLIST[i]!; const active = i === cur;
             return (
               <li key={i}>
                 <button onClick={() => select(i)} aria-current={active}
