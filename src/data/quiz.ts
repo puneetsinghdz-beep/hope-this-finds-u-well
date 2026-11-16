@@ -21,7 +21,7 @@ export const QUIZ: QuizQuestion[] = [
   { q: "Which show or movie are you watching right now? 📺", text: { hint: "Write your answer." } },
   { q: "How's your texting game is so good? 📱", options: [...o("Natural talent 😌", "Professional yapper 🗣️", "Depends on the person 👀", "Typing speed + drama 💀"), OTHER] },
   { q: "Pick your most dangerous late-night combination. 🌙", options: [...o("Music + overthinking 🎧", "Food + horror series 🍿", "Text + me 😭"), OTHER] },
-  { q: "You promised me RASMALAI!!! but didn't completed WHENNN? 😭", options: [...o("Ohhh shitt, bhul gayi 💀", "Blinkit kr dungi, ruk A and B 😭"), OTHER] },
+  { q: "You promised me RASMALAI!!! but didn't completed WHENNN? 😭", options: [...o("Ohhh shitt, bhul gayi 💀", "Blinkit kr dungi, ruk", "A and B 😭"), OTHER] },
   { q: "If words and actions don't match, then… 👀", options: [...o("Trust the actions.", "Observe quietly.", "Ask directly.", "Step back."), OTHER, { label: "Skip this one." }] },
   { q: "What matters most to you in a friendship? 🤍", options: [...o("Honesty", "Consistency", "Understanding", "Communication"), OTHER, { label: "Skip this one." }] },
   { q: "What's your best birthday memory (what comes first when asked)?", text: { hint: "“Tell me the story. Even a small memory counts.”" } },
