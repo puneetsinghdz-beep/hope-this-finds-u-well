@@ -14,13 +14,60 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      playlist_editors: {
+        Row: {
+          email: string
+        }
+        Insert: {
+          email: string
+        }
+        Update: {
+          email?: string
+        }
+        Relationships: []
+      }
+      playlist_tracks: {
+        Row: {
+          artist: string | null
+          audio_url: string | null
+          created_at: string
+          id: string
+          position: number
+          storage_path: string | null
+          title: string
+          track_key: string | null
+          updated_at: string
+        }
+        Insert: {
+          artist?: string | null
+          audio_url?: string | null
+          created_at?: string
+          id?: string
+          position: number
+          storage_path?: string | null
+          title: string
+          track_key?: string | null
+          updated_at?: string
+        }
+        Update: {
+          artist?: string | null
+          audio_url?: string | null
+          created_at?: string
+          id?: string
+          position?: number
+          storage_path?: string | null
+          title?: string
+          track_key?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_playlist_editor: { Args: never; Returns: boolean }
     }
     Enums: {
       [_ in never]: never
