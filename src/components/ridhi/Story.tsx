@@ -169,7 +169,6 @@ function Chat({ next }: { next: () => void }) {
           {stage === 5 && (
             <div className="mt-2 flex flex-col items-end gap-1 self-end" style={{ animation: "send .45s cubic-bezier(.2,.8,.2,1) both" }}>
               <p className="rounded-3xl rounded-br-md bg-heading px-4 py-2.5 text-primary-foreground">{REPLY}</p>
-              <span className="animate-fade-in pr-2 text-[11px] text-muted-foreground" style={{ animationDelay: ".8s" }}>Seen</span>
             </div>
           )}
           <div className="mt-auto flex justify-end pt-4">
