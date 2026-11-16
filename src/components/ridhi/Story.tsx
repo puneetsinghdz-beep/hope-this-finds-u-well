@@ -1,23 +1,51 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { PHOTOS, POSES } from "@/data/photos";
 
-type Step = "envelope" | "celebrate" | "ethnic" | "chat" | "pose" | "closing";
+type Step = "envelope" | "celebrate" | "ethnic" | "chat" | "pose" | "teaser" | "closing";
 
 function Screen({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return <section className={`bg-wash relative flex min-h-screen w-full items-center justify-center overflow-hidden px-5 py-16 ${className}`}>{children}</section>;
 }
 
-function Confetti() {
-  const [bits] = useState(() =>
-    Array.from({ length: 36 }, (_, i) => ({ left: Math.random() * 100, delay: Math.random() * 4, dur: 6 + Math.random() * 5, size: 6 + Math.random() * 8, rose: i % 2 === 0, heart: i % 5 === 0 })),
-  );
+const prefersReducedMotion = () => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const CONFETTI_COLORS = ["bg-rose", "bg-sky", "bg-accent", "bg-butter", "bg-card", "bg-secondary"];
+
+/** Full-page party-popper burst + light confetti rain. Lasts ~4s, then fades and unmounts. */
+function Celebration() {
+  const [on, setOn] = useState(true);
+  const [bits] = useState(() => {
+    if (typeof window === "undefined" || prefersReducedMotion()) return null;
+    const small = window.innerWidth < 640;
+    const w = window.innerWidth, h = window.innerHeight;
+    const poppers = Array.from({ length: small ? 36 : 70 }, (_, i) => {
+      const left = i % 2 === 0;
+      return {
+        kind: "pop" as const, left,
+        dx: (left ? 1 : -1) * (0.15 + Math.random() * 0.75) * w,
+        dy: -(0.35 + Math.random() * 0.6) * h,
+        r: (Math.random() - 0.5) * 900, delay: Math.random() * 0.35, dur: 2.6 + Math.random() * 1.1,
+        size: 6 + Math.random() * 7, round: i % 3 === 0, color: CONFETTI_COLORS[i % CONFETTI_COLORS.length]!,
+      };
+    });
+    const rain = Array.from({ length: small ? 18 : 36 }, (_, i) => ({
+      kind: "rain" as const, x: Math.random() * 100, r: 360 + Math.random() * 540, delay: 0.3 + Math.random() * 1.2,
+      dur: 2.4 + Math.random() * 1.2, size: 5 + Math.random() * 6, round: i % 2 === 0, color: CONFETTI_COLORS[(i + 2) % CONFETTI_COLORS.length]!,
+    }));
+    return [...poppers, ...rain];
+  });
+  useEffect(() => { const t = setTimeout(() => setOn(false), 4600); return () => clearTimeout(t); }, []);
+  if (!on || !bits) return null;
   return (
-    <div aria-hidden className="pointer-events-none absolute inset-0">
-      {bits.map((b, i) => (
-        <span key={i} className={`absolute top-0 ${b.rose ? "text-rose" : "text-sky"}`}
-          style={{ left: `${b.left}%`, fontSize: b.size * 1.6, animation: `confetti-fall ${b.dur}s linear ${b.delay}s infinite` }}>
-          {b.heart ? "♡" : "✦"}
-        </span>
+    <div aria-hidden className="pointer-events-none fixed inset-0 z-40 overflow-hidden" style={{ animation: "fade-out .8s 3.8s ease forwards" }}>
+      {bits.map((b, i) => b.kind === "pop" ? (
+        <span key={i} className={`absolute bottom-0 shadow-soft ${b.color} ${b.round ? "rounded-full" : "rounded-[2px]"}`}
+          style={{ [b.left ? "left" : "right"]: "2%", width: b.size, height: b.round ? b.size : b.size * 1.6,
+            "--dx": `${b.dx}px`, "--dy": `${b.dy}px`, "--r": `${b.r}deg`,
+            animation: `popper ${b.dur}s cubic-bezier(.15,.75,.35,1) ${b.delay}s both` } as React.CSSProperties} />
+      ) : (
+        <span key={i} className={`absolute top-0 ${b.color} ${b.round ? "rounded-full" : "rounded-[2px]"}`}
+          style={{ left: `${b.x}%`, width: b.size, height: b.round ? b.size : b.size * 1.6, "--r": `${b.r}deg`,
+            animation: `rain ${b.dur}s linear ${b.delay}s both` } as React.CSSProperties} />
       ))}
     </div>
   );
@@ -50,7 +78,7 @@ function Envelope({ onOpen }: { onOpen: () => void }) {
 function Celebrate({ next }: { next: () => void }) {
   return (
     <Screen>
-      <Confetti />
+      <Celebration />
       <div className="relative grid max-w-5xl items-center gap-10 md:grid-cols-2">
         <div className="animate-zoom-in relative mx-auto w-full max-w-sm">
           <span aria-hidden className="animate-float absolute -left-6 -top-6 text-5xl text-rose">♡</span>
@@ -90,30 +118,66 @@ function Ethnic({ next }: { next: () => void }) {
   );
 }
 
+const MSG_1 = "One thing I want you to remember…";
+const MSG_2 = "No matter what situations come in your way, please don't change yourself. Keep being the person you are, and never lose the things that make you you.";
+const REPLY = "Yeah yeah! ik😅";
+
 function Chat({ next }: { next: () => void }) {
+  // 0 header · 1 first msg · 2 typing dots · 3 second msg typing out · 4 reply offered · 5 reply sent
   const [stage, setStage] = useState(0);
+  const [typed, setTyped] = useState(0);
+  const sent = useRef(false);
   useEffect(() => {
-    const t = [setTimeout(() => setStage(1), 600), setTimeout(() => setStage(2), 2000), setTimeout(() => setStage(3), 4400), setTimeout(() => setStage(4), 5400)];
+    const t = [setTimeout(() => setStage(1), 600), setTimeout(() => setStage(2), 1900)];
+    t.push(setTimeout(() => { setStage(3); if (prefersReducedMotion()) setTyped(MSG_2.length); }, 3500));
     return () => t.forEach(clearTimeout);
   }, []);
+  useEffect(() => {
+    if (stage !== 3) return;
+    if (typed >= MSG_2.length) { const t = setTimeout(() => setStage(4), 500); return () => clearTimeout(t); }
+    const t = setTimeout(() => setTyped((n) => Math.min(MSG_2.length, n + 2)), 32);
+    return () => clearTimeout(t);
+  }, [stage, typed]);
+  const reply = () => {
+    if (sent.current) return;
+    sent.current = true;
+    setStage(5);
+    setTimeout(next, 2000);
+  };
   return (
     <Screen>
       <div className="animate-zoom-in w-full max-w-md overflow-hidden rounded-[2rem] bg-card shadow-soft">
         <div className="flex items-center gap-3 border-b border-border px-5 py-4">
-          <div className="grid h-10 w-10 place-items-center rounded-full bg-gradient-to-br from-rose to-sky font-serif text-lg text-heading">P</div>
+          <div className="rounded-full bg-gradient-to-tr from-butter via-rose to-sky p-[2px]">
+            <div className="grid h-10 w-10 place-items-center rounded-full bg-card font-serif text-lg text-heading">P</div>
+          </div>
           <div><p className="font-semibold text-heading">Puneet</p><p className="text-xs text-muted-foreground">Active now</p></div>
         </div>
-        <div className="flex min-h-80 flex-col gap-3 px-5 py-6">
-          {stage >= 1 && <p className="animate-fade-up max-w-[85%] rounded-3xl rounded-bl-md bg-secondary px-4 py-3">One thing I want you to remember…</p>}
+        <div className="flex min-h-96 flex-col gap-2 px-4 py-6" aria-live="polite">
+          {stage >= 1 && <p className="animate-fade-up max-w-[80%] self-start rounded-3xl rounded-bl-md bg-secondary px-4 py-2.5">{MSG_1}</p>}
           {stage === 2 && (
-            <div className="flex w-16 gap-1 rounded-3xl bg-secondary px-4 py-4" aria-label="Puneet is typing">
+            <div className="animate-fade-in flex w-16 gap-1 self-start rounded-3xl bg-secondary px-4 py-4" aria-label="Puneet is typing">
               {[0, 1, 2].map((i) => <span key={i} className="h-2 w-2 rounded-full bg-muted-foreground" style={{ animation: `dot 1.2s ${i * 0.15}s infinite` }} />)}
             </div>
           )}
-          {stage >= 3 && <p className="animate-fade-up max-w-[85%] rounded-3xl rounded-bl-md bg-secondary px-4 py-3">No matter what situations come in your way, please don't change yourself. Keep being the person you are, and never lose the things that make you you.</p>}
-        </div>
-        <div className="border-t border-border p-4 text-center">
-          <button className="btn-soft w-full" disabled={stage < 4} onClick={next}>Okay, I don't 😊</button>
+          {stage >= 3 && (
+            <p className="animate-fade-up max-w-[80%] self-start rounded-3xl rounded-bl-md bg-secondary px-4 py-2.5" aria-label={MSG_2}>
+              <span aria-hidden>{MSG_2.slice(0, typed)}</span>
+              {typed < MSG_2.length && <span aria-hidden className="ml-0.5 inline-block h-4 w-px translate-y-0.5 bg-heading" style={{ animation: "caret 1s steps(1) infinite" }} />}
+            </p>
+          )}
+          {stage === 5 && (
+            <div className="mt-2 flex flex-col items-end gap-1 self-end" style={{ animation: "send .45s cubic-bezier(.2,.8,.2,1) both" }}>
+              <p className="rounded-3xl rounded-br-md bg-heading px-4 py-2.5 text-primary-foreground">{REPLY}</p>
+            </div>
+          )}
+          <div className="mt-auto flex justify-end pt-4">
+            {stage === 4 && (
+              <button onClick={reply} className="animate-fade-up rounded-full border border-rose bg-card px-4 py-2 text-sm text-heading shadow-soft transition-colors hover:bg-accent">
+                {REPLY}
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </Screen>
@@ -157,6 +221,22 @@ function Pose({ next }: { next: () => void }) {
   );
 }
 
+function Teaser({ next }: { next: () => void }) {
+  const [ready, setReady] = useState(false);
+  useEffect(() => { const t = setTimeout(() => setReady(true), 2600); return () => clearTimeout(t); }, []);
+  return (
+    <Screen>
+      <div className="flex max-w-2xl flex-col items-center gap-12 text-center">
+        <span aria-hidden className="animate-float text-3xl text-rose">✦</span>
+        <p className="animate-fade-up font-serif text-3xl italic leading-snug text-heading md:text-5xl" style={{ animationDuration: "1.6s" }}>
+          I have one little recommendation for you… coming soon.… 👀
+        </p>
+        <div className="h-12">{ready && <button className="btn-soft animate-fade-in" onClick={next} aria-label="Continue">→</button>}</div>
+      </div>
+    </Screen>
+  );
+}
+
 function Closing({ next }: { next: () => void }) {
   return (
     <Screen>
@@ -169,11 +249,11 @@ function Closing({ next }: { next: () => void }) {
   );
 }
 
-const ORDER: Step[] = ["envelope", "celebrate", "ethnic", "chat", "pose", "closing"];
+const ORDER: Step[] = ["envelope", "celebrate", "ethnic", "chat", "pose", "teaser", "closing"];
 
 export function Story({ onDone }: { onDone: () => void }) {
   const [i, setI] = useState(0);
-  const next = () => { window.scrollTo({ top: 0 }); i + 1 >= ORDER.length ? onDone() : setI(i + 1); };
+  const next = () => { window.scrollTo({ top: 0 }); if (i + 1 >= ORDER.length) onDone(); else setI(i + 1); };
   const step = ORDER[i];
   return (
     <div key={step} className="animate-fade-in">
@@ -182,6 +262,7 @@ export function Story({ onDone }: { onDone: () => void }) {
       {step === "ethnic" && <Ethnic next={next} />}
       {step === "chat" && <Chat next={next} />}
       {step === "pose" && <Pose next={next} />}
+      {step === "teaser" && <Teaser next={next} />}
       {step === "closing" && <Closing next={next} />}
     </div>
   );

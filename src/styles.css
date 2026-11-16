@@ -65,6 +65,7 @@
   --color-heading: var(--heading);
   --color-sky: var(--sky);
   --color-rose: var(--rose);
+  --color-butter: var(--butter);
   --font-serif: "Cormorant Garamond", Georgia, serif;
   --font-sans: "Karla", system-ui, sans-serif;
   --shadow-soft: var(--shadow-soft);
@@ -98,6 +99,7 @@
   --accent-foreground: oklch(0.33 0.05 252);
   --sky: oklch(0.88 0.05 235);               /* #B9DDF5 */
   --rose: oklch(0.8 0.08 350);               /* #EBAFC7 */
+  --butter: oklch(0.92 0.06 85);             /* soft champagne for confetti */
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(1 0 0);
   --border: oklch(0.9 0.025 240);
@@ -155,12 +157,32 @@
 @keyframes spin-slow { to { transform: rotate(360deg); } }
 @keyframes ken-burns { from { transform: scale(1.06); } to { transform: scale(1); } }
 
+@keyframes popper { 0% { transform: translate(0,0) rotate(0) scale(.6); opacity: 0; } 8% { opacity: 1; } 55% { transform: translate(var(--dx), var(--dy)) rotate(var(--r)) scale(1); } 100% { transform: translate(calc(var(--dx) * 1.15), calc(var(--dy) + 55vh)) rotate(calc(var(--r) * 2)); opacity: 0; } }
+@keyframes rain { from { transform: translateY(-8vh) rotate(0); } to { transform: translateY(105vh) rotate(var(--r)); } }
+@keyframes fade-out { to { opacity: 0; } }
+@keyframes send { from { opacity: 0; transform: translate(10px, 18px) scale(.85); } to { opacity: 1; transform: none; } }
+@keyframes eq { 0%,100% { transform: scaleY(.25); } 50% { transform: scaleY(1); } }
+@keyframes glow { 0%,100% { opacity: .55; transform: scale(1); } 50% { opacity: .9; transform: scale(1.04); } }
+@keyframes caret { 50% { opacity: 0; } }
+
 @utility animate-fade-up { animation: fade-up .9s cubic-bezier(.2,.7,.2,1) both; }
 @utility animate-fade-in { animation: fade-in 1s ease both; }
 @utility animate-zoom-in { animation: zoom-in 1s cubic-bezier(.2,.7,.2,1) both; }
 @utility animate-float { animation: float 6s ease-in-out infinite; }
 @utility animate-spin-slow { animation: spin-slow 8s linear infinite; }
 @utility animate-ken-burns { animation: ken-burns 8s ease-out both; }
+
+@utility vinyl {
+  background:
+    radial-gradient(circle, transparent 31%, color-mix(in oklab, var(--color-card) 14%, transparent) 31.5%, transparent 32.5%),
+    repeating-radial-gradient(circle, color-mix(in oklab, var(--color-heading) 92%, black) 0 2px, color-mix(in oklab, var(--color-heading) 78%, black) 2px 3px),
+    var(--color-heading);
+  animation: spin-slow 6s linear infinite; animation-play-state: paused;
+  &[data-playing="true"] { animation-play-state: running; }
+}
+@utility vinyl-sheen { background: conic-gradient(from 30deg, transparent 0 10%, color-mix(in oklab, var(--color-card) 22%, transparent) 14%, transparent 22% 60%, color-mix(in oklab, var(--color-card) 14%, transparent) 64%, transparent 72%); }
+@utility eq-bar { transform-origin: bottom; transform: scaleY(.15); }
+@utility player-glow { background: radial-gradient(circle at 30% 30%, var(--color-accent), transparent 60%), radial-gradient(circle at 70% 70%, var(--color-sky), transparent 60%); filter: blur(40px); }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }

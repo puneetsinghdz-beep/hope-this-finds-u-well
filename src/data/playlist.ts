@@ -1,5 +1,25 @@
-// Approved default order. `file` is filled in once the real MP3 is added to public/audio.
-export type Track = { title: string; artist?: string; file?: string };
+import teriJhalak from "@/assets/audio/teri-jhalak.mp3.asset.json";
+import dua from "@/assets/audio/dua.mp3.asset.json";
+import dekhoNa from "@/assets/audio/dekho-na.mp3.asset.json";
+import meriBanogiKya from "@/assets/audio/meri-banogi-kya.mp3.asset.json";
+import nainoNeBaandhi from "@/assets/audio/naino-ne-baandhi.mp3.asset.json";
+import untilIFoundYou from "@/assets/audio/until-i-found-you.mp3.asset.json";
+import sangChalogiKya from "@/assets/audio/sang-chalogi-kya.mp3.asset.json";
+import sirfTum from "@/assets/audio/sirf-tum.mp3.asset.json";
+import hoteTak from "@/assets/audio/hote-tak.mp3.asset.json";
+
+// Approved default order. The shared playlist lives in the backend (seeded with exactly this list);
+// this copy is the offline fallback and the reference the tests check against.
+export type Track = { key: string; title: string; artist?: string; file?: string };
+
+const FILES: Record<string, string> = {
+  "teri-jhalak": teriJhalak.url, dua: dua.url, "dekho-na": dekhoNa.url, "meri-banogi-kya": meriBanogiKya.url,
+  "naino-ne-baandhi": nainoNeBaandhi.url, "until-i-found-you": untilIFoundYou.url, "sang-chalogi-kya": sangChalogiKya.url,
+  "sirf-tum": sirfTum.url, "hote-tak": hoteTak.url,
+};
+const ARTISTS: Record<string, string> = { "sirf-tum": "Darshan Raval", "hote-tak": "Papon" };
+
+export const trackKey = (title: string) => title.toLowerCase().replace(/'/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
 export const PLAYLIST: Track[] = [
   "Teri Jhalak", "Dua", "Dekho Na", "Fear", "Meri Banogi Kya", "Naino Ne Baandhi", "Qayde Se", "Haara",
@@ -7,8 +27,13 @@ export const PLAYLIST: Track[] = [
   "Tera Naam Doon", "Piya O're Piya", "Tere Sang Yaara", "Sirf Tum", "Tum Mere", "Mila Tujhe",
   "Mai Tujhsa Hogaya", "Baawra", "Halka Halka", "Tujhko", "Mausam", "Darmiyaan Unplugged", "Laute Nahi",
   "Aur Mohabbat Kitni Karoon", "Das Haasil Sau Baaki", "Jab Tak Hai Jaan Title Song", "Hote Tak",
-].map((title) => (title === "Hote Tak" ? { title, artist: "Papon" } : { title }));
+].map((title) => {
+  const key = trackKey(title);
+  return { key, title, artist: ARTISTS[key], file: FILES[key] };
+});
 
-export const HOTE_TAK = "Hote Tak";
+export const DEFAULT_KEY = "teri-jhalak";
+export const RECOMMENDED_KEY = "sirf-tum";
+export const HOTE_TAK_KEY = "hote-tak";
 // Pending: the approved "why I chose it" explanation has not been supplied yet.
 export const HOTE_TAK_EXPLANATION: string | null = null;
