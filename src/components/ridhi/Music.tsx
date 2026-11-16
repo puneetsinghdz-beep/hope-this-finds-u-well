@@ -1,130 +1,177 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { HOTE_TAK, HOTE_TAK_EXPLANATION, PLAYLIST } from "@/data/playlist";
+import { Link } from "@tanstack/react-router";
+import { DEFAULT_KEY, HOTE_TAK_EXPLANATION, HOTE_TAK_KEY, RECOMMENDED_KEY } from "@/data/playlist";
+import { loadSource, onAudioEnded, pauseAudio, playSource, seekAudio, setVolume, useAudio } from "@/lib/audio";
+import { useTracks, type PlayTrack } from "@/lib/tracks";
+import { useIsEditor } from "@/lib/editor";
+import { Equalizer, Vinyl } from "./Vinyl";
+import { Notes } from "./Notes";
 
 const fmt = (s: number) => (isFinite(s) ? `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}` : "0:00");
+const UNAVAILABLE = "This song hasn't been added yet.";
+const FAILED = "This song couldn't be played.";
 
 export function Music() {
-  const audio = useRef<HTMLAudioElement>(null);
-  const [cur, setCur] = useState(0);
-  const [playing, setPlaying] = useState(false);
-  const [time, setTime] = useState(0);
-  const [dur, setDur] = useState(0);
+  const tracks = useTracks();
+  const audio = useAudio();
+  const isEditor = useIsEditor();
+  const defaultId = (tracks.find((t) => t.key === DEFAULT_KEY) ?? tracks[0])?.id ?? "";
+  const [curId, setCurId] = useState<string | null>(null); // null = fresh player → default track (Teri Jhalak)
   const [vol, setVol] = useState(0.8);
   const [shuffle, setShuffle] = useState(false);
   const [repeat, setRepeat] = useState(false);
-  const [order, setOrder] = useState<number[]>(() => PLAYLIST.map((_, i) => i));
-  const [error, setError] = useState<string | null>(null);
+  const [shuffled, setShuffled] = useState<string[]>([]);
+  const [note, setNote] = useState<string | null>(null);
   const [hoteEnded, setHoteEnded] = useState(false);
   const [showWhy, setShowWhy] = useState(false);
-  const [suggest, setSuggest] = useState("");
+  const [recState, setRecState] = useState<"idle" | "playing" | "unavailable">("idle");
 
-  const track = PLAYLIST[cur]!;
-  const available = !!track.file;
+  const byId = useMemo(() => new Map(tracks.map((t) => [t.id, t])), [tracks]);
+  const track: PlayTrack | undefined = byId.get(curId ?? defaultId) ?? tracks[0];
+  const order = useMemo(() => {
+    const ids = tracks.map((t) => t.id);
+    if (!shuffle) return ids;
+    const known = shuffled.filter((id) => byId.has(id));
+    return [...known, ...ids.filter((id) => !known.includes(id))];
+  }, [tracks, shuffle, shuffled, byId]);
+  const pos = track ? order.indexOf(track.id) : -1;
 
-  useEffect(() => {
-    if (shuffle) {
-      const rest = PLAYLIST.map((_, i) => i).filter((i) => i !== cur);
-      for (let i = rest.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [rest[i], rest[j]] = [rest[j]!, rest[i]!]; }
-      setOrder([cur, ...rest]);
-    } else setOrder(PLAYLIST.map((_, i) => i));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [shuffle]);
+  const mine = !!track && audio.owner === "player" && audio.src !== null && audio.src === track.src;
+  const playing = mine && audio.playing;
+  const busy = mine && !audio.paused; // play pressed (may still be buffering)
 
-  useEffect(() => { if (audio.current) audio.current.volume = vol; }, [vol]);
+  useEffect(() => { setVolume(vol); }, [vol]);
 
-  const select = (i: number, autoplay = true) => {
-    setCur(i); setHoteEnded(false); setShowWhy(false); setError(null); setTime(0); setDur(0);
-    const a = audio.current; if (!a) return;
-    a.pause(); setPlaying(false);
-    const t = PLAYLIST[i]!;
-    if (!t.file) { a.removeAttribute("src"); a.load(); setError("This song hasn't been added yet."); return; }
-    a.src = t.file;
-    if (autoplay) a.play().then(() => setPlaying(true)).catch(() => setError("This song couldn't be loaded."));
+  const select = (t: PlayTrack, autoplay = true) => {
+    setCurId(t.id); setHoteEnded(false); setShowWhy(false); setNote(null);
+    if (t.key !== RECOMMENDED_KEY) setRecState("idle");
+    if (!t.src) { loadSource("player", null); setNote(UNAVAILABLE); return false; }
+    if (!autoplay) { loadSource("player", t.src); return true; }
+    void playSource("player", t.src).then((ok) => { if (!ok) setNote(FAILED); });
+    return true;
   };
-  const step = (d: number) => { const p = order.indexOf(cur); const n = p + d; if (n < 0 || n >= order.length) return false; select(order[n]!); return true; };
+
+  const step = (d: number) => {
+    const n = pos + d;
+    if (n < 0 || n >= order.length) return;
+    const t = byId.get(order[n]!);
+    if (t) select(t);
+  };
 
   const toggle = () => {
-    const a = audio.current; if (!a) return;
-    if (!available) { setError("This song hasn't been added yet."); return; }
-    if (!a.src) a.src = track.file!;
-    if (playing) { a.pause(); setPlaying(false); }
-    else a.play().then(() => setPlaying(true)).catch(() => setError("This song couldn't be loaded."));
+    if (!track) return;
+    if (!track.src) { setNote(UNAVAILABLE); return; }
+    if (busy) { pauseAudio(); return; }
+    setNote(null);
+    void playSource("player", track.src).then((ok) => { if (!ok) setNote(FAILED); });
   };
 
-  const onEnded = () => {
-    setPlaying(false);
-    if (track.title === HOTE_TAK) setHoteEnded(true);
-    if (repeat) { audio.current!.currentTime = 0; audio.current!.play().then(() => setPlaying(true)); return; }
-    if (track.title !== HOTE_TAK) step(1);
+  // Natural end of a track: Hote Tak waits for its special button; others repeat or advance.
+  const latest = useRef({ track, repeat, step });
+  latest.current = { track, repeat, step };
+  useEffect(() => onAudioEnded((owner) => {
+    if (owner !== "player") return;
+    const { track: t, repeat: r, step: s } = latest.current;
+    if (!t) return;
+    if (t.key === HOTE_TAK_KEY) { setHoteEnded(true); return; }
+    if (r && t.src) { void playSource("player", t.src); return; }
+    s(1);
+  }), []);
+
+  useEffect(() => { if (mine && audio.failed) setNote(FAILED); }, [mine, audio.failed]);
+
+  const toggleShuffle = () => {
+    if (!shuffle && track) {
+      const rest = tracks.map((t) => t.id).filter((id) => id !== track.id);
+      for (let i = rest.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [rest[i], rest[j]] = [rest[j]!, rest[i]!]; }
+      setShuffled([track.id, ...rest]);
+    }
+    setShuffle(!shuffle);
   };
 
-  const pos = useMemo(() => order.indexOf(cur), [order, cur]);
+  const playRecommendation = () => {
+    const rec = tracks.find((t) => t.key === RECOMMENDED_KEY);
+    if (!rec || !rec.src) { if (rec) { setCurId(rec.id); loadSource("player", null); } setRecState("unavailable"); return; }
+    select(rec);
+    setRecState("playing");
+  };
 
+  if (!track) return null;
   return (
-    <div className="grid gap-8 lg:grid-cols-[1fr_1.1fr]">
-      <audio ref={audio} preload="metadata" onTimeUpdate={(e) => setTime(e.currentTarget.currentTime)}
-        onLoadedMetadata={(e) => setDur(e.currentTarget.duration)} onEnded={onEnded} onPause={() => setPlaying(false)}
-        onError={() => { if (available) { setError("This song couldn't be loaded."); setPlaying(false); } }} />
+    <div className="space-y-10">
+      <div className="grid gap-8 lg:grid-cols-[1fr_1.1fr]">
+        <div className={`relative overflow-hidden rounded-[2rem] bg-card p-6 text-center shadow-soft transition-shadow duration-700 md:p-8 ${playing ? "shadow-photo" : ""}`}>
+          <Vinyl playing={playing} className="w-48 md:w-56" />
+          <div className="mt-6"><Equalizer playing={playing} /></div>
+          <h3 className="mt-3 text-3xl">{track.title}</h3>
+          <p className="text-sm text-muted-foreground">{track.artist ?? "\u00a0"}</p>
+          {note && <p role="status" className="mt-2 text-sm text-rose">{note}</p>}
 
-      <div className="rounded-[2rem] bg-card p-6 text-center shadow-soft md:p-8">
-        <div className={`mx-auto grid aspect-square w-48 place-items-center rounded-full bg-heading shadow-photo md:w-56 ${playing ? "animate-spin-slow" : ""}`}>
-          <div className="grid h-1/3 w-1/3 place-items-center rounded-full bg-gradient-to-br from-rose to-sky"><span className="h-3 w-3 rounded-full bg-heading" /></div>
-        </div>
-        <h3 className="mt-6 text-3xl">{track.title}</h3>
-        <p className="text-sm text-muted-foreground">{track.artist ?? "\u00a0"}</p>
-        {error && <p role="status" className="mt-2 text-sm text-rose">{error}</p>}
-
-        <div className="mt-5 flex items-center gap-3 text-xs text-muted-foreground">
-          <span>{fmt(time)}</span>
-          <input type="range" aria-label="Seek" min={0} max={dur || 0} step={0.1} value={time} disabled={!dur}
-            onChange={(e) => { const v = +e.target.value; if (audio.current) audio.current.currentTime = v; setTime(v); }} className="w-full accent-rose" />
-          <span>{fmt(dur)}</span>
-        </div>
-        <div className="mt-4 flex items-center justify-center gap-2">
-          <button className={`btn-ghost px-3 ${shuffle ? "bg-accent" : ""}`} aria-pressed={shuffle} aria-label="Shuffle" onClick={() => setShuffle(!shuffle)}>⤨</button>
-          <button className="btn-ghost px-3" aria-label="Previous" disabled={pos <= 0} onClick={() => step(-1)}>⏮</button>
-          <button className="btn-soft h-14 w-14 p-0 text-xl" aria-label={playing ? "Pause" : "Play"} onClick={toggle}>{playing ? "❚❚" : "▶"}</button>
-          <button className="btn-ghost px-3" aria-label="Next" disabled={pos >= order.length - 1} onClick={() => step(1)}>⏭</button>
-          <button className={`btn-ghost px-3 ${repeat ? "bg-accent" : ""}`} aria-pressed={repeat} aria-label="Repeat current song" onClick={() => setRepeat(!repeat)}>↻</button>
-        </div>
-        <label className="mt-4 flex items-center justify-center gap-3 text-sm text-muted-foreground">
-          Volume <input type="range" min={0} max={1} step={0.01} value={vol} onChange={(e) => setVol(+e.target.value)} className="w-32 accent-rose" />
-        </label>
-
-        {hoteEnded && track.title === HOTE_TAK && (
-          <div className="animate-fade-up mt-6 space-y-4">
-            {!showWhy ? (
-              <button className="btn-soft" onClick={() => setShowWhy(true)}>Now you know the song. Want to know why I chose it? ♡</button>
-            ) : HOTE_TAK_EXPLANATION ? (
-              <p className="whitespace-pre-line rounded-2xl bg-accent p-5 text-left">{HOTE_TAK_EXPLANATION}</p>
-            ) : null}
+          <div className="mt-5 flex items-center gap-3 text-xs text-muted-foreground">
+            <span>{fmt(mine ? audio.time : 0)}</span>
+            <input type="range" aria-label="Seek" min={0} max={mine ? audio.duration || 0 : 0} step={0.1} value={mine ? audio.time : 0}
+              disabled={!mine || !audio.duration} onChange={(e) => seekAudio(+e.target.value)} className="w-full accent-rose" />
+            <span>{fmt(mine ? audio.duration : 0)}</span>
           </div>
-        )}
+          <div className="mt-4 flex items-center justify-center gap-2">
+            <button className={`btn-ghost px-3 ${shuffle ? "bg-accent" : ""}`} aria-pressed={shuffle} aria-label="Shuffle" onClick={toggleShuffle}>⤨</button>
+            <button className="btn-ghost px-3" aria-label="Previous" disabled={pos <= 0} onClick={() => step(-1)}>⏮</button>
+            <button className="btn-soft h-14 w-14 p-0 text-xl" aria-label={busy ? "Pause" : "Play"} onClick={toggle}>{busy ? "❚❚" : "▶"}</button>
+            <button className="btn-ghost px-3" aria-label="Next" disabled={pos >= order.length - 1} onClick={() => step(1)}>⏭</button>
+            <button className={`btn-ghost px-3 ${repeat ? "bg-accent" : ""}`} aria-pressed={repeat} aria-label="Repeat current song" onClick={() => setRepeat(!repeat)}>↻</button>
+          </div>
+          <label className="mt-4 flex items-center justify-center gap-3 text-sm text-muted-foreground">
+            Volume <input type="range" min={0} max={1} step={0.01} value={vol} onChange={(e) => setVol(+e.target.value)} className="w-32 accent-rose" />
+          </label>
+
+          {hoteEnded && track.key === HOTE_TAK_KEY && (
+            <div className="animate-fade-up mt-6 space-y-4">
+              {!showWhy ? (
+                <button className="btn-soft" onClick={() => setShowWhy(true)}>Now you know the song. Want to know why I chose it? ♡</button>
+              ) : HOTE_TAK_EXPLANATION ? (
+                <p className="whitespace-pre-line rounded-2xl bg-accent p-5 text-left">{HOTE_TAK_EXPLANATION}</p>
+              ) : (
+                <p className="rounded-2xl bg-accent p-5 font-serif text-lg italic text-heading">Coming soon ♡</p>
+              )}
+            </div>
+          )}
+        </div>
+
+        <div className="rounded-[2rem] bg-card p-4 shadow-soft">
+          <ol className="max-h-[32rem] space-y-1 overflow-y-auto pr-1">
+            {order.map((id, n) => {
+              const t = byId.get(id)!; const active = t.id === track.id;
+              return (
+                <li key={id}>
+                  <button onClick={() => select(t)} aria-current={active}
+                    className={`flex w-full items-center gap-4 rounded-xl px-4 py-2.5 text-left transition-colors ${active ? "bg-accent text-heading" : "hover:bg-secondary"}`}>
+                    <span className="w-6 text-xs text-muted-foreground">{n + 1}</span>
+                    <span className="flex-1">{t.title}{t.artist && <span className="text-muted-foreground"> — {t.artist}</span>}</span>
+                    {!t.src && <span className="text-xs text-muted-foreground">Coming soon</span>}
+                    {active && playing && <span className="text-rose">♪</span>}
+                  </button>
+                </li>
+              );
+            })}
+          </ol>
+          {isEditor && (
+            <div className="mt-3 border-t border-border pt-3 text-center">
+              <Link to="/manage" className="text-sm text-muted-foreground underline-offset-4 hover:text-heading hover:underline">Manage Playlist</Link>
+            </div>
+          )}
+        </div>
       </div>
 
-      <div className="rounded-[2rem] bg-card p-4 shadow-soft">
-        <ol className="max-h-[32rem] space-y-1 overflow-y-auto pr-1">
-          {order.map((i, n) => {
-            const t = PLAYLIST[i]!; const active = i === cur;
-            return (
-              <li key={i}>
-                <button onClick={() => select(i)} aria-current={active}
-                  className={`flex w-full items-center gap-4 rounded-xl px-4 py-2.5 text-left transition-colors ${active ? "bg-accent text-heading" : "hover:bg-secondary"}`}>
-                  <span className="w-6 text-xs text-muted-foreground">{n + 1}</span>
-                  <span className="flex-1">{t.title}{t.artist && <span className="text-muted-foreground"> — {t.artist}</span>}</span>
-                  {!t.file && <span className="text-xs text-muted-foreground">Coming soon</span>}
-                  {active && playing && <span className="text-rose">♪</span>}
-                </button>
-              </li>
-            );
-          })}
-        </ol>
-        <div className="mt-4 border-t border-border p-3">
-          <label htmlFor="suggest" className="text-sm text-muted-foreground">Got a song I should hear? ♡</label>
-          <input id="suggest" value={suggest} onChange={(e) => setSuggest(e.target.value)} placeholder="Song name & artist"
-            className="mt-2 w-full rounded-xl border border-input bg-background px-4 py-2.5 outline-none focus:ring-2 focus:ring-ring" />
-          {suggest && <p className="mt-2 text-xs text-muted-foreground">Kept here on your screen — tell me about it ♡</p>}
-        </div>
+      <div className="mx-auto max-w-2xl rounded-[2rem] bg-card p-6 text-center shadow-soft md:p-8">
+        <h3 className="text-3xl">Recommended Song ♡</h3>
+        <button className="btn-soft mt-5" onClick={playRecommendation}>If My Story Had a Soundtrack..</button>
+        {recState === "playing" && track.key === RECOMMENDED_KEY && (
+          <p className="animate-fade-up mt-4 font-serif text-xl italic text-heading" role="status">
+            {playing ? "Now playing: " : ""}{track.title}{track.artist ? ` — ${track.artist}` : ""}
+          </p>
+        )}
+        {recState === "unavailable" && <p role="status" className="mt-4 text-sm text-rose">This song isn't available yet.</p>}
+        <Notes />
       </div>
     </div>
   );
