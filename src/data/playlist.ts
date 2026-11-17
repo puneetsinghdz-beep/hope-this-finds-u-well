@@ -10,7 +10,7 @@ import hoteTak from "@/assets/audio/hote-tak.mp3.asset.json";
 
 // Approved default order. The shared playlist lives in the backend (seeded with exactly this list);
 // this copy is the offline fallback and the reference the tests check against.
-export type Track = { key: string; title: string; artist?: string; file?: string };
+export type Track = { key: string; title: string; artist?: string | undefined; file?: string | undefined };
 
 const FILES: Record<string, string> = {
   "teri-jhalak": teriJhalak.url, dua: dua.url, "dekho-na": dekhoNa.url, "meri-banogi-kya": meriBanogiKya.url,

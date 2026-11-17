@@ -154,7 +154,7 @@ export function Music() {
               );
             })}
           </ol>
-          {isEditor && (
+          {isEditor === true && (
             <div className="mt-3 border-t border-border pt-3 text-center">
               <Link to="/manage" className="text-sm text-muted-foreground underline-offset-4 hover:text-heading hover:underline">Manage Playlist</Link>
             </div>

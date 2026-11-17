@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { LETTER } from "@/data/letter";
+import { useState } from "react";
+import { LetterFlow } from "./LetterFlow";
 import { Music } from "./Music";
 import { Quiz } from "./Quiz";
 import { Wishes } from "./Wishes";
@@ -17,9 +17,9 @@ function Section({ id, eyebrow, title, sub, children }: { id: string; eyebrow?: 
   );
 }
 
-export function Home() {
+export function Home({ onReplay }: { onReplay: () => void }) {
   const [letter, setLetter] = useState(false);
-  useEffect(() => { document.body.style.overflow = letter ? "hidden" : ""; }, [letter]);
+  const [unlocked, setUnlocked] = useState(false);
   return (
     <main className="bg-wash animate-fade-in min-h-screen">
       <header className="px-5 pt-24 pb-8 text-center">
@@ -29,7 +29,7 @@ export function Home() {
         </p>
       </header>
 
-      <Section id="wishes" title="Birthday Wishes for Ridhi"><Wishes /></Section>
+      <Section id="wishes" title="Birthday Wishes for Ridhi"><Wishes onReplay={onReplay} /></Section>
       <Section id="quiz" eyebrow="A LITTLE SPACE TO BE YOURSELF" title="The Little Things That Make You, You ♡" sub="A few choices, a few stories, a little more of your world. 👀"><Quiz /></Section>
       <Section id="music" title="A song for you 🎶" sub="A little collection of songs, just for your little corner of the world. ♡"><Music /></Section>
 
@@ -37,17 +37,7 @@ export function Home() {
         <button onClick={() => setLetter(true)} className="font-serif text-xl italic text-muted-foreground underline-offset-8 transition-colors hover:text-heading hover:underline">Before you go…</button>
       </footer>
 
-      {letter && (
-        <div role="dialog" aria-modal="true" aria-label="A letter" className="animate-fade-in fixed inset-0 z-50 overflow-y-auto bg-heading/40 px-4 py-10 backdrop-blur-sm" onClick={() => setLetter(false)}>
-          <article onClick={(e) => e.stopPropagation()} className="animate-fade-up relative mx-auto max-w-2xl rounded-[1.5rem] bg-card px-7 py-12 shadow-photo md:px-14">
-            <button onClick={() => setLetter(false)} aria-label="Close letter" className="absolute right-5 top-4 text-2xl text-muted-foreground hover:text-heading">×</button>
-            <p className="mb-8 text-center text-2xl text-rose">♡</p>
-            <div className="space-y-5 font-serif text-xl leading-relaxed text-heading">
-              {LETTER.map((p, i) => <p key={i}>{p}</p>)}
-            </div>
-          </article>
-        </div>
-      )}
+      {letter && <LetterFlow unlocked={unlocked} onUnlock={() => setUnlocked(true)} onClose={() => setLetter(false)} />}
     </main>
   );
 }

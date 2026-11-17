@@ -13,13 +13,15 @@ export function useSession() {
   return session;
 }
 
-/** Whether the signed-in person is on the playlist editors list (checked by the backend). */
+/** undefined while checking; whether the signed-in person is on the playlist editors list (checked by the backend). */
 export function useIsEditor() {
   const session = useSession();
-  const [ok, setOk] = useState(false);
+  const [ok, setOk] = useState<boolean | undefined>(undefined);
   useEffect(() => {
+    if (session === undefined) return;
     if (!session) { setOk(false); return; }
     let live = true;
+    setOk(undefined);
     supabase.rpc("is_playlist_editor").then(({ data }) => { if (live) setOk(data === true); });
     return () => { live = false; };
   }, [session?.user.id]); // eslint-disable-line react-hooks/exhaustive-deps
