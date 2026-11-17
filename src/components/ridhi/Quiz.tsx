@@ -10,10 +10,13 @@ export function Quiz() {
   const [rating, setRating] = useState(0);
   const [feedback, setFeedback] = useState("");
 
+  const [hydrated, setHydrated] = useState(false);
   useEffect(() => {
     try { const s = JSON.parse(localStorage.getItem(KEY) || "null"); if (s) { setAnswers(s.answers || {}); setRating(s.rating || 0); setFeedback(s.feedback || ""); } } catch { /* ignore */ }
+    setHydrated(true);
   }, []);
-  useEffect(() => { localStorage.setItem(KEY, JSON.stringify({ answers, rating, feedback })); }, [answers, rating, feedback]);
+  // Only write after the saved answers were read back, so a fresh mount never wipes them.
+  useEffect(() => { if (hydrated) localStorage.setItem(KEY, JSON.stringify({ answers, rating, feedback })); }, [hydrated, answers, rating, feedback]);
 
   const set = (i: number, a: Answer) => setAnswers((p) => ({ ...p, [i]: { ...p[i], ...a } }));
 
