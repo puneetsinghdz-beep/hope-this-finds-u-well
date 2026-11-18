@@ -28,3 +28,11 @@ use the editor.
   own key and store it in Secrets.
 - **Secrets.** Lovable manages them. Do not put secret values in the repo.
 <!-- LOVABLE:END -->
+
+## Project rules
+- All audio goes through the single shared element in `src/lib/audio.ts` (with an `owner`); never create another `<audio>` — prevents overlapping songs and keeps vinyl/effects tied to real playback.
+- The shared playlist lives in the `playlist_tracks` table; `src/data/playlist.ts` is the seeded reference + offline fallback. Special behaviour (default track, recommendation, Hote Tak) keys off `track_key`, which the DB trigger makes immutable — renaming a song must never break those interactions.
+- Playlist write access = signed-in email listed in `playlist_editors` (checked by `is_playlist_editor()` in RLS and storage policies). Keep email confirmation on, otherwise anyone could claim an editor's email.
+- Uploaded audio lives in the private `playlist-audio` bucket under `tracks/` and is played via signed URLs (public buckets are blocked in this workspace); only `tracks/` files may be deleted, original songs are CDN assets.
+- Quiz answers, ratings and the song-suggestion/message notes stay in localStorage only and must never claim to be sent.
+- The letter gate stores only a SHA-256 hash of the code (playful gate, not security).
