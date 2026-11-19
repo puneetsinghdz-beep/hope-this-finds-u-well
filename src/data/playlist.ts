@@ -7,6 +7,9 @@ import untilIFoundYou from "@/assets/audio/until-i-found-you.mp3.asset.json";
 import sangChalogiKya from "@/assets/audio/sang-chalogi-kya.mp3.asset.json";
 import sirfTum from "@/assets/audio/sirf-tum.mp3.asset.json";
 import hoteTak from "@/assets/audio/hote-tak.mp3.asset.json";
+import darkhaast from "@/assets/audio/darkhaast.mp3.asset.json";
+import qaafirana from "@/assets/audio/qaafirana.mp3.asset.json";
+import kuchToHai from "@/assets/audio/kuch-to-hai.mp3.asset.json";
 
 // Approved default order. The shared playlist lives in the backend (seeded with exactly this list);
 // this copy is the offline fallback and the reference the tests check against.
@@ -31,6 +34,13 @@ export const PLAYLIST: Track[] = [
   const key = trackKey(title);
   return { key, title, artist: ARTISTS[key], file: FILES[key] };
 });
+
+// Songs supplied later (Nov 18); they follow the approved 32, never mixed into them.
+export const EXTRA_TRACKS: Track[] = [
+  { key: "darkhaast", title: "Darkhaast", file: darkhaast.url },
+  { key: "qaafirana", title: "Qaafirana", file: qaafirana.url },
+  { key: "kuch-to-hai", title: "Kuch To Hai", file: kuchToHai.url },
+];
 
 export const DEFAULT_KEY = "teri-jhalak";
 export const RECOMMENDED_KEY = "sirf-tum";

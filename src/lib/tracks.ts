@@ -1,6 +1,6 @@
 import { queryOptions, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { PLAYLIST } from "@/data/playlist";
+import { EXTRA_TRACKS, PLAYLIST } from "@/data/playlist";
 
 export type PlayTrack = {
   id: string; // stable id used by the player: the original key for the 32 originals, row id for added songs
@@ -16,7 +16,7 @@ export type PlayTrack = {
 
 export const AUDIO_BUCKET = "playlist-audio";
 
-export const FALLBACK_TRACKS: PlayTrack[] = PLAYLIST.map((t, i) => ({
+export const FALLBACK_TRACKS: PlayTrack[] = [...PLAYLIST, ...EXTRA_TRACKS].map((t, i) => ({
   id: t.key, rowId: null, key: t.key, position: i + 1, title: t.title, artist: t.artist ?? null,
   audioUrl: t.file ?? null, storagePath: null, src: t.file ?? null,
 }));

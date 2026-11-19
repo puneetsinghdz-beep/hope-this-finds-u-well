@@ -1,0 +1,14 @@
+# Roadmap — Final refinements (Nov 18–19)
+- [ ] Visible full-screen confetti right after envelope opens (+ reduced-motion version), replayable
+- [ ] Envelope text "There is something I made for u"; smoother envelope → birthday transition
+- [ ] Festive birthday page decorations
+- [ ] Slower, realistic chat timing
+- [ ] Teaser text "There is something recommended to come... coming soon... 👀"
+- [ ] Finale confetti on "Hope u like it ♡"
+- [ ] Playlist heading "Playlist for you 🎶"; homepage subtitle replaced
+- [ ] Secret Message icon + tooltip + server-checked password → Sirf Tum recommendation
+- [ ] "Any message for me" saved privately + owner-only inbox (blocked: owner email)
+- [ ] Reassurance text under "There's still hope, right? ♡"
+- [ ] Compact replay icon between Previous and Next
+- [ ] Add Darkhaast, Qaafirana, Kuch To Hai after the 32 songs
+- [ ] Verify in browser (desktop + mobile)

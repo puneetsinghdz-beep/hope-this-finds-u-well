@@ -62,12 +62,43 @@ export type Database = {
         }
         Relationships: []
       }
+      private_messages: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+        }
+        Relationships: []
+      }
+      site_owners: {
+        Row: {
+          email: string
+        }
+        Insert: {
+          email: string
+        }
+        Update: {
+          email?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
       is_playlist_editor: { Args: never; Returns: boolean }
+      is_site_owner: { Args: never; Returns: boolean }
     }
     Enums: {
       [_ in never]: never

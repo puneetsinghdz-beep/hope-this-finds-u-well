@@ -164,6 +164,9 @@
 @keyframes eq { 0%,100% { transform: scaleY(.25); } 50% { transform: scaleY(1); } }
 @keyframes glow { 0%,100% { opacity: .55; transform: scale(1); } 50% { opacity: .9; transform: scale(1.04); } }
 @keyframes caret { 50% { opacity: 0; } }
+@keyframes twinkle { 0% { opacity: 0; transform: scale(.6); } 25%,70% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(.9); } }
+@keyframes sway { 0%,100% { transform: rotate(-4deg); } 50% { transform: rotate(4deg); } }
+@keyframes envelope-out { to { opacity: 0; transform: translateY(-18px) scale(.96); } }
 
 @utility animate-fade-up { animation: fade-up .9s cubic-bezier(.2,.7,.2,1) both; }
 @utility animate-fade-in { animation: fade-in 1s ease both; }
@@ -186,4 +189,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+  /* the celebration keeps a gentle opacity-only sparkle so it is still visible */
+  .calm-bit { animation-duration: 3.4s !important; }
+  [data-celebration].calm-bit { animation-duration: .9s !important; }
 }

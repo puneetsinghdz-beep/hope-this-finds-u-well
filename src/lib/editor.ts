@@ -14,7 +14,12 @@ export function useSession() {
 }
 
 /** undefined while checking; whether the signed-in person is on the playlist editors list (checked by the backend). */
-export function useIsEditor() {
+export function useIsEditor() { return useBackendCheck("is_playlist_editor"); }
+
+/** undefined while checking; whether the signed-in person is the site owner who may read private messages. */
+export function useIsOwner() { return useBackendCheck("is_site_owner"); }
+
+function useBackendCheck(fn: "is_playlist_editor" | "is_site_owner") {
   const session = useSession();
   const [ok, setOk] = useState<boolean | undefined>(undefined);
   useEffect(() => {
@@ -22,7 +27,7 @@ export function useIsEditor() {
     if (!session) { setOk(false); return; }
     let live = true;
     setOk(undefined);
-    supabase.rpc("is_playlist_editor").then(({ data }) => { if (live) setOk(data === true); });
+    supabase.rpc(fn).then(({ data }) => { if (live) setOk(data === true); });
     return () => { live = false; };
   }, [session?.user.id]); // eslint-disable-line react-hooks/exhaustive-deps
   return ok;
