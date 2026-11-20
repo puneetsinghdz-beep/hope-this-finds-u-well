@@ -157,8 +157,8 @@
 @keyframes spin-slow { to { transform: rotate(360deg); } }
 @keyframes ken-burns { from { transform: scale(1.06); } to { transform: scale(1); } }
 
-@keyframes popper { 0% { transform: translate(0,0) rotate(0) scale(.6); opacity: 0; } 8% { opacity: 1; } 55% { transform: translate(var(--dx), var(--dy)) rotate(var(--r)) scale(1); } 100% { transform: translate(calc(var(--dx) * 1.15), calc(var(--dy) + 55vh)) rotate(calc(var(--r) * 2)); opacity: 0; } }
-@keyframes rain { from { transform: translateY(-8vh) rotate(0); } to { transform: translateY(105vh) rotate(var(--r)); } }
+@keyframes popper { 0% { transform: translate(0,0) rotate(0) scale(.6); opacity: 0; } 6% { opacity: 1; } 55% { transform: translate(var(--dx), var(--dy)) rotate(var(--r)) scale(1); } 82% { opacity: 1; } 100% { transform: translate(calc(var(--dx) * 1.15), calc(var(--dy) + 55vh)) rotate(calc(var(--r) * 2)); opacity: 0; } }
+@keyframes rain { 0% { transform: translateY(-8vh) rotate(0); opacity: 1; } 85% { opacity: 1; } 100% { transform: translateY(105vh) rotate(var(--r)); opacity: 0; } }
 @keyframes fade-out { to { opacity: 0; } }
 @keyframes send { from { opacity: 0; transform: translate(10px, 18px) scale(.85); } to { opacity: 1; transform: none; } }
 @keyframes eq { 0%,100% { transform: scaleY(.25); } 50% { transform: scaleY(1); } }

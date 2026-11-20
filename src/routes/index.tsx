@@ -10,7 +10,7 @@ export const Route = createFileRoute("/")({
       { title: "The Ridhi Experience ♡" },
       { name: "description", content: "A little something, made just for you… ♡" },
       { property: "og:title", content: "The Ridhi Experience ♡" },
-      { property: "og:description", content: "A little collection of wishes, memories, chaos, and surprises." },
+      { property: "og:description", content: "A little corner for you, hope it matches your vibe" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],

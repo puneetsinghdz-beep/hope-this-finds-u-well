@@ -18,11 +18,11 @@ function Envelope({ onBurst, onOpen }: { onBurst: () => void; onOpen: () => void
     if (opening) return; // one tap = one opening, one celebration
     setOpening(true);
     // flap opens (0–.7s) → letter rises (.6–1.5s) → confetti bursts as it lifts → page glides on
-    timers.current.push(setTimeout(onBurst, 850), setTimeout(onOpen, 1750));
+    timers.current.push(setTimeout(onBurst, 800), setTimeout(onOpen, 1450));
   };
   return (
     <Screen>
-      <div className="flex flex-col items-center gap-10 text-center" style={opening ? { animation: "envelope-out .55s 1.25s ease-in forwards" } : undefined}>
+      <div className="flex flex-col items-center gap-10 text-center" style={opening ? { animation: "envelope-out .5s 1s ease-in forwards" } : undefined}>
         <p className="animate-fade-up font-serif text-3xl italic text-heading md:text-4xl">There is something I made for u</p>
         <button onClick={open} disabled={opening} aria-label="Open the envelope" className="animate-zoom-in relative h-48 w-72 [perspective:800px] md:h-56 md:w-84">
           <div className="absolute inset-0 rounded-2xl bg-accent shadow-soft" />

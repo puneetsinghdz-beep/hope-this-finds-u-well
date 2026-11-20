@@ -69,14 +69,14 @@ function makeBits(variant: CelebrationVariant): Bit[] {
 
 function Piece({ b, calm }: { b: Bit; calm: boolean }) {
   const glyph = b.shape === "heart" ? "♥" : b.shape === "star" ? "✦" : null;
-  const style: React.CSSProperties & Record<string, string | number> = {
-    left: `${b.x}vw`, top: `${b.y}vh`, width: glyph ? undefined : b.size, height: glyph ? undefined : b.shape === "rect" ? b.size * 1.6 : b.size,
-    fontSize: glyph ? b.size : undefined, lineHeight: 1, color: glyph ? b.fill : undefined, background: glyph ? undefined : b.fill,
+  const style = ({
+    left: `${b.x}vw`, top: `${b.y}vh`, lineHeight: 1,
+    ...(glyph ? { fontSize: b.size, color: b.fill } : { width: b.size, height: b.shape === "rect" ? b.size * 1.6 : b.size, background: b.fill }),
     "--dx": `${b.dx}px`, "--dy": `${b.dy}px`, "--r": `${b.r}deg`,
     animation: calm
       ? `twinkle 3.4s ease-in-out ${b.delay}s both`
       : b.motion === "burst" ? `popper ${b.dur}s cubic-bezier(.12,.75,.3,1) ${b.delay}s both` : `rain ${b.dur}s linear ${b.delay}s both`,
-  };
+  }) as unknown as React.CSSProperties;
   const cls = `absolute ${calm ? "calm-bit" : ""} ${glyph ? "" : b.shape === "rect" ? "rounded-[2px]" : "rounded-full"} ${glyph ? "" : "shadow-soft"}`;
   return <span className={cls} style={style}>{glyph}</span>;
 }

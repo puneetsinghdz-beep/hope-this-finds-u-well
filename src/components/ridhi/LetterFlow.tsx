@@ -78,7 +78,12 @@ export function LetterFlow({ unlocked, onUnlock, onClose }: { unlocked: boolean;
             <p className="animate-fade-up font-serif text-3xl italic leading-snug text-heading md:text-4xl" style={{ animationDuration: "1.6s" }}>
               Some things take time. That doesn't mean they can't get better. ♡
             </p>
-            <button className="btn-soft animate-fade-in" style={{ animationDelay: "1.4s" }} onClick={startSong}>There's still hope, right? ♡</button>
+            <div className="flex flex-col items-center gap-8">
+              <button className="btn-soft animate-fade-in" style={{ animationDelay: "1.4s" }} onClick={startSong}>There's still hope, right? ♡</button>
+              <p className="animate-fade-in max-w-md text-sm leading-relaxed text-muted-foreground" style={{ animationDelay: "2.2s" }}>
+                Please leave it here if this feels stressful or overwhelming. I just want you to enjoy the experience, without feeling any pressure. I thought about this a lot before adding it, but this is the only way I could share what was on my mind. ♡
+              </p>
+            </div>
           </div>
         )}
 

@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { QUIZ, RATING_LABELS } from "@/data/quiz";
-import { DEFAULT_KEY, PLAYLIST, RECOMMENDED_KEY } from "@/data/playlist";
+import { DEFAULT_KEY, EXTRA_TRACKS, PLAYLIST, RECOMMENDED_KEY } from "@/data/playlist";
+import { FALLBACK_TRACKS } from "@/lib/tracks";
+import { validateMessage } from "@/lib/messages";
 import { checkLetterCode } from "@/lib/letter-gate";
 import { validateAudioFile, validateAudioUrl } from "@/lib/playlist-admin";
 
@@ -25,6 +27,20 @@ describe("approved content", () => {
       "Teri Jhalak", "Dua", "Dekho Na", "Meri Banogi Kya", "Naino Ne Baandhi", "Until I Found You", "Sang Chalogi Kya", "Sirf Tum", "Hote Tak",
     ]);
   });
+});
+
+describe("added songs", () => {
+  it("puts Darkhaast, Qaafirana and Kuch To Hai after the approved 32, with audio", () => {
+    expect(FALLBACK_TRACKS.slice(0, 32).map((t) => t.title)).toEqual(PLAYLIST.map((t) => t.title));
+    expect(FALLBACK_TRACKS.slice(32).map((t) => t.title)).toEqual(["Darkhaast", "Qaafirana", "Kuch To Hai"]);
+    expect(EXTRA_TRACKS.every((t) => t.file)).toBe(true);
+  });
+});
+
+describe("private message checks", () => {
+  it("refuses an empty message", () => expect(validateMessage("   ")).not.toBeNull());
+  it("refuses a message over 4000 characters", () => expect(validateMessage("a".repeat(4001))).not.toBeNull());
+  it("accepts a normal message", () => expect(validateMessage("Thank you ♡")).toBeNull());
 });
 
 describe("letter code", () => {

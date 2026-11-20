@@ -6,6 +6,7 @@ import { useTracks, type PlayTrack } from "@/lib/tracks";
 import { useIsEditor } from "@/lib/editor";
 import { Equalizer, Vinyl } from "./Vinyl";
 import { Notes } from "./Notes";
+import { SecretMessage } from "./SecretMessage";
 
 const fmt = (s: number) => (isFinite(s) ? `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}` : "0:00");
 const UNAVAILABLE = "This song hasn't been added yet.";
@@ -25,6 +26,7 @@ export function Music() {
   const [hoteEnded, setHoteEnded] = useState(false);
   const [showWhy, setShowWhy] = useState(false);
   const [recState, setRecState] = useState<"idle" | "playing" | "unavailable">("idle");
+  const [secretOpen, setSecretOpen] = useState(false); // set only after the server accepts the password
 
   const byId = useMemo(() => new Map(tracks.map((t) => [t.id, t])), [tracks]);
   const track: PlayTrack | undefined = byId.get(curId ?? defaultId) ?? tracks[0];
@@ -154,24 +156,29 @@ export function Music() {
               );
             })}
           </ol>
-          {isEditor === true && (
-            <div className="mt-3 border-t border-border pt-3 text-center">
+          <div className="mt-3 flex items-center justify-center gap-4 border-t border-border pt-3">
+            {!secretOpen && <SecretMessage onUnlock={() => setSecretOpen(true)} />}
+            {isEditor === true && (
               <Link to="/manage" className="text-sm text-muted-foreground underline-offset-4 hover:text-heading hover:underline">Manage Playlist</Link>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
 
       <div className="mx-auto max-w-2xl rounded-[2rem] bg-card p-6 text-center shadow-soft md:p-8">
-        <h3 className="text-3xl">Recommended Song ♡</h3>
-        <button className="btn-soft mt-5" onClick={playRecommendation}>If My Story Had a Soundtrack..</button>
-        {recState === "playing" && track.key === RECOMMENDED_KEY && (
-          <p className="animate-fade-up mt-4 font-serif text-xl italic text-heading" role="status">
-            {playing ? "Now playing: " : ""}{track.title}{track.artist ? ` — ${track.artist}` : ""}
-          </p>
+        {secretOpen && (
+          <div className="animate-fade-up">
+            <h3 className="text-3xl">Recommended Song ♡</h3>
+            <button className="btn-soft mt-5" onClick={playRecommendation}>If My Story Had a Soundtrack..</button>
+            {recState === "playing" && track.key === RECOMMENDED_KEY && (
+              <p className="animate-fade-up mt-4 font-serif text-xl italic text-heading" role="status">
+                {playing ? "Now playing: " : ""}{track.title}{track.artist ? ` — ${track.artist}` : ""}
+              </p>
+            )}
+            {recState === "unavailable" && <p role="status" className="mt-4 text-sm text-rose">This song isn't available yet.</p>}
+          </div>
         )}
-        {recState === "unavailable" && <p role="status" className="mt-4 text-sm text-rose">This song isn't available yet.</p>}
-        <Notes />
+        <Notes divider={secretOpen} />
       </div>
     </div>
   );
